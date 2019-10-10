@@ -1,0 +1,437 @@
+;
+$(function () {
+    var error_msg = {
+        "i" : "<i class=\"icon_err\"></i>",
+        "user" : "登录名可能是您的手机号、邮箱或用户名",
+        "password" : "您的密码可能为字母、数字或符号的组合",
+        "checkcode" : "请输入右侧验证码，不区分大小写",
+        "user_error" : "用户名不能为空",
+        "password_error" : "密码不能为空",
+        "checkcode_error" : "您输入的验证码有误",
+        "login_in" : "正在登录",
+        "login_out" : "立即登录",
+        "sms_mobile" : "请输入手机号码",
+        "sms_code" : "请输入您的短信验证码",
+        "sms_mobile_error" : "您输入手机号码有误",
+        "sms_code_error" : "您输入的短信验证码格式有误"
+    }
+    
+    var msg_log = {
+    	"show_ec" : function(msg){
+    		showDialog(msg, 'error', '', '', '1', '', '', '', '', '', '2');
+    	},
+    	"alert" : function(msg){
+    		alert(msg);
+    	},
+    	"console" : function(msg){
+    		console.log(msg);
+    	}
+    }
+    
+	var Verification = {
+	    'Focusin' : function(control, error, type){
+	    	LOGIN_TYPE = true;
+	    	if(type == "1"){ 	
+            	$("#error_"+control).addClass("err_msg2");
+                $("#error_"+control).removeClass("err_msg err_msg1");
+            } else {
+            	$("#"+control).addClass("err_txt");
+                $("#error_"+control).removeClass("err_msg2");
+                $("#error_"+control).addClass("err_msg err_msg1");
+            }
+            $("#error_"+control).show();
+        	$("#error_"+control).html(error);
+    	},
+    	'Focusout' : function(control, type){
+        	$("#"+control).removeClass("err_txt");
+        	$("#error_"+control).hide();
+        }
+	}
+
+    var imgsrc = {
+    	'code' : function(chash,byid){
+    		var shtml = SHOP_SITE_URL+'/index.php?act=seccode&op=makecode&nchash=';
+    		var nchash = chash;
+			document.getElementById(byid).src= shtml + nchash + '&t=' + Math.random();
+    	}
+    };
+    
+    var login_start = {
+		'login_href' : function(type,url){
+			if(type == 'reload'){
+				location.replace(location);
+			} else if(type == 'mall'){
+				location.href = url;
+			}else{
+				location.href = url;
+			} 
+    	}
+    };
+    
+    $('#user_name').focusin(function () {
+    	Verification.Focusin("user_name", error_msg.user, "1");
+    });
+    $("#user_name").focusout(function () {
+    	Verification.Focusout("user_name", "1");
+    });
+    $('#password').focusin(function () {
+    	Verification.Focusin("password", error_msg.password, "1");
+    });
+    $("#password").focusout(function () {
+    	Verification.Focusout("password", "1");
+    }); 
+    $('#captcha').focusin(function () {
+    	Verification.Focusin("captcha", error_msg.checkcode, "1");
+    });
+    $("#captcha").focusout(function () {
+    	Verification.Focusout("captcha", "1");
+    }); 
+    $('#sms_mobile').focusin(function () {
+        Verification.Focusin("sms_mobile", error_msg.sms_mobile, "1");
+    });
+    $("#sms_mobile").focusout(function () {
+        Verification.Focusout("sms_mobile", "1");
+    });
+    $('#sms_code').focusin(function () {
+        Verification.Focusin("sms_code", error_msg.sms_code, "1");
+    });
+    $("#sms_code").focusout(function () {
+        Verification.Focusout("sms_code", "1");
+    });
+    var LOGIN_TYPE = true;
+    function VerificationLogin(){
+    	if(!LOGIN_TYPE){
+            return;
+        }
+    	LOGIN_TYPE = !LOGIN_TYPE;
+        var username = $("#user_name").val();
+        if(username == ''){
+        	Verification.Focusin("user_name",error_msg.i+error_msg.user_name_error,"2");
+            return false;
+        } else {
+        	Verification.Focusout("user_name", "2");
+        }
+        var password = $("#password").val();
+        if(password == ''){
+        	Verification.Focusin("password",error_msg.i+error_msg.password_error,"2");
+            return false;
+        } else {
+        	Verification.Focusout("password", "2");
+        }
+        var captcha = $("#captcha").val();
+        if(captcha == '' || captcha.length != 4){
+        	Verification.Focusin("captcha",error_msg.i+error_msg.checkcode_error,"2");
+            return false;
+        } else {
+        	Verification.Focusout("captcha", "2");
+        }
+        var form = $('#login_form');
+        var formhash = $("input=[name='formhash']").val();
+        var token_key_id = $("#token_key_id").val();
+        var form_submit = $("#form_submit").val();
+        var inajax = $("#inajax").val();
+        var nchash = $("#nchash").val();
+        var user_name = $("#user_name").val();
+        var password = hex_md5($("#password").val());
+        var captcha = $("#captcha").val();
+        var autoLogin = $("#autoLogin").val();
+        var ref_url = $("#ref_url").val();
+        var version = "2";
+	    $.ajax({
+		    url: form.attr('action'),
+		    type: form.attr('method'),
+		    dataType: 'json',
+		    data: {
+                "formhash" : formhash,
+                "token_key_id" : token_key_id,
+                "form_submit" : form_submit,
+                "inajax" : inajax,
+                "nchash" : nchash,
+                "user_name" : user_name,
+                "psw" : password,
+                "captcha" : captcha,
+                "autoLogin" : autoLogin,
+                "ref_url" : ref_url,
+                "version" : version
+            },
+		    beforeSend: function(){
+		    	$("#loginsubmit").attr("disabled","disabled").html(error_msg.login_in);
+			},
+			success: function(data){
+				LOGIN_TYPE = true;
+    			if(data.state == '1'){
+    				var mall_type = data.mall_type;
+    				var ref_type = data.ref_type;
+					var ref_url = data.ref_url;
+    				if(mall_type == '1'){
+    					$.ajax({
+    						type: "GET",
+    						async: false,
+    						crossDomain: true,
+    						timeout : 1000,
+    						url: data.mall_url,
+    						data: { time: data.mall_time, code: data.mall_code},
+    						dataType: "jsonp",
+    						jsonp: "callback",
+    						jsonpCallback: "callbackHandler",
+    						success: function (data) {  
+    							login_start.login_href(ref_type,ref_url);  	  						
+    						},
+    						error: function(e) { 	
+    							login_start.login_href(ref_type,ref_url);  		
+    						},
+    						complete : function(XMLHttpRequest,status){
+  							  if(status=='timeout'){
+    							 login_start.login_href(ref_type,ref_url);  
+    						  }
+    						} 
+    						});
+    				} else {
+    					login_start.login_href(ref_type,ref_url); 
+    				}  				
+    			} else {
+    				var nchash = $('#nchash').val();
+    				imgsrc.code(nchash,'codeimage');
+        			$("#loginsubmit").removeAttr("disabled").html(error_msg.login_out);
+    				if(data.state == '-1'){
+        				Verification.Focusin("user_name",error_msg.i+data.msg,"2");
+                        return false;
+        			} else if(data.state == '-2'){
+        				Verification.Focusin("password",error_msg.i+data.msg,"2");
+                        return false;
+        			} else if(data.state == '-3'){
+        				Verification.Focusin("captcha",error_msg.i+data.msg,"2");
+                        return false;
+        			} else if(data.state == '-10'){
+        				msg_log.show_ec(data.msg);
+        			} else {
+        				msg_log.show_ec(data.msg);
+        			}
+    			} 
+			},
+			error: function(){
+				LOGIN_TYPE = true;
+			    $("#loginsubmit").removeAttr("disabled").html(error_msg.login_out);
+			}
+		});
+		return false;
+    }
+
+    function VerificationSmsLogin() {
+        if(!LOGIN_TYPE){
+            return;
+        }
+        LOGIN_TYPE = !LOGIN_TYPE;
+        var sms_mobile = $("#sms_mobile").val();
+        var sms_code = $("#sms_code").val();
+        var token_key_id = $("#token_key_id").val();
+        var inajax = $("#inajax").val();
+
+        if(sms_mobile == ''){
+            Verification.Focusin("sms_mobile",error_msg.i+error_msg.sms_mobile_error,"2");
+            return false;
+        } else {
+            var reg = /^1[0-9]{10}$/;
+            var flag = reg.test(sms_mobile);
+            if (!flag) {
+                Verification.Focusin("sms_mobile",error_msg.i+error_msg.sms_mobile_error,"2");
+                return false;
+            }
+            Verification.Focusout("sms_mobile", "2");
+        }
+        if(sms_code == ''){
+            Verification.Focusin("sms_code",error_msg.i+error_msg.sms_code_error,"2");
+            return false;
+        } else {
+            Verification.Focusout("sms_code", "2");
+        }
+        
+        var form = $('#login_sms_form');
+        var ref_url = $("#ref_url").val();
+        var version = "2";
+        $.ajax({
+            url: form.attr('action'),
+            type: form.attr('method'),
+            dataType: 'json',
+            data: {
+                "sms_mobile" : sms_mobile,
+                "inajax" : inajax,
+                "sms_code" : sms_code,
+                "token_key_id" : token_key_id,
+                "ref_url" : ref_url,
+                "version" : version
+            },
+            beforeSend: function(){
+                $("#sms_login_submit").attr("disabled","disabled").html(error_msg.login_in);
+            },
+            success: function(data){
+                LOGIN_TYPE = true;
+                if(data.state == '1'){
+                    var mall_type = data.mall_type;
+                    var ref_type = data.ref_type;
+                    var ref_url = data.ref_url;
+                    if(mall_type == '1'){
+                        $.ajax({
+                            type: "GET",
+                            async: false,
+                            crossDomain: true,
+                            timeout : 1000,
+                            url: data.mall_url,
+                            data: { time: data.mall_time, code: data.mall_code},
+                            dataType: "jsonp",
+                            jsonp: "callback",
+                            jsonpCallback: "callbackHandler",
+                            success: function (data) {
+                                login_start.login_href(ref_type,ref_url);
+                            },
+                            error: function(e) {
+                                login_start.login_href(ref_type,ref_url);
+                            },
+                            complete : function(XMLHttpRequest,status){
+                              if(status=='timeout'){
+                                 login_start.login_href(ref_type,ref_url);
+                              }
+                            } 
+                            });
+                    } else {
+                        login_start.login_href(ref_type,ref_url); 
+                    }
+                } else {
+                    $("#sms_login_submit").removeAttr("disabled").html(error_msg.login_out);
+                    if(data.state == '-1'){
+                        Verification.Focusin("sms_mobile",error_msg.i+data.msg,"2");
+                        return false;
+                    } else if(data.state == '-2'){
+                        Verification.Focusin("sms_code",error_msg.i+data.msg,"2");
+                        return false;
+                    } else if(data.state == '-10'){
+                        msg_log.show_ec(data.msg);
+                    } else {
+                        msg_log.show_ec(data.msg);
+                    }
+                } 
+            },
+            error: function(){
+                LOGIN_TYPE = true;
+                $("#sms_login_submit").removeAttr("disabled").html(error_msg.login_out);
+            }
+        });
+        return false;
+    }
+    
+
+    var repeat_Time = 120;
+    var ALLOW_SEND = true;
+    $('#send_mobile_code').click(function (){
+        var sms_mobile = $('#sms_mobile').val();
+        if (sms_mobile.length != 11){
+            Verification.Focusin("sms_mobile",error_msg.i+error_msg.sms_mobile_error,"2");
+            return false;
+        } else {
+            Verification.Focusout("sms_mobile", "2");
+        }
+        
+        if (!ALLOW_SEND) return;
+        ALLOW_SEND = !ALLOW_SEND;
+        var token_key_id = $("#token_key_id").val();
+        var inajax = $("#inajax").val();
+        $.ajax({
+            url : SHOP_SITE_URL+"/index.php?act=sms_login&op=ajax_send_login",
+            type : 'POST',
+            dataType : 'json',
+            data : {
+                'token' : 'ok', 
+                'mobile' : sms_mobile,
+                "inajax" : inajax,
+                'token_key_id' : token_key_id
+            },
+            success : function (data) {
+                if (data.state == '1') {
+                    var ref_type = data.ref_type;
+                    var ref_url = data.ref_url;
+
+                    $('#sending').hide();
+                    $('.send_success_tips').show();
+                    repeat_Time = data.time;
+                    if(repeat_Time < 1){
+                        repeat_Time = 120;
+                    }
+
+                    $('#hide_times').hide();
+                    $('#show_times').html(repeat_Time);
+                    setTimeout(StepTimes,1000);
+                } else {
+                    $('#hide_times').show();
+                    ALLOW_SEND = !ALLOW_SEND;
+                    $('#sending').hide();
+                    $('.send_success_tips').hide();
+                    showDialog(data.msg, 'error', '', '', '1', '', '', '', '', '', '2');
+                }
+            },
+            error : function (data) {
+                showDialog('处理失败', 'error', '', '', '1', '', '', '', '', '', '2');
+            }
+        });
+    });
+
+    function StepTimes() {
+        $num = parseInt($('#show_times').html());
+        $num = $num - 1;
+        $('#show_times').html($num);
+        if ($num <= 0) {
+            ALLOW_SEND = !ALLOW_SEND;
+            $('#hide_times').show();
+            $('.send_success_tips').hide();
+        } else {
+            setTimeout(StepTimes,1000);
+        }
+    }
+
+    $("#loginsubmit").click(function () {
+    	VerificationLogin();
+    });
+    
+    $("#user_name, #password, #captcha").keypress(function(event) {
+        if ( event.which == 13 ) {
+        	VerificationLogin();
+        }
+    });
+
+    $("#sms_mobile, #sms_code").keypress(function(event) {
+        if ( event.which == 13 ) {
+            VerificationSmsLogin();
+        }
+    });
+
+    $("#sms_login_submit").click(function () {
+        VerificationSmsLogin();
+    });
+
+    $(".radio_box input[type=radio]").on("click",function(){
+        var i=$(this).parent().index();
+        $(".mc").hide().eq(i).show();
+    });
+
+    //设置小屏
+    var body = $('body'),
+        win = $(window),
+        top;
+    var w_SetWidth = function() {
+        var winW = win.width();
+        if(winW <= 1400) {
+            body.addClass('small');
+            $(".login_r_fixed a").hover(function(){
+                $(this).addClass('hover');
+            },function(){
+                $(this).removeClass('hover');
+            })
+        } else {
+            body.removeClass('add_w1000');
+        }
+    };
+    w_SetWidth();
+    win.on('resize', function() {
+        w_SetWidth();
+    });
+        
+});
